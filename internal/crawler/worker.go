@@ -1,6 +1,7 @@
 package crawler
 
 import (
+	"sync"
 	"time"
 
 	"github.com/3rr0r-505/arachne/internal/config"
@@ -18,57 +19,62 @@ func Worker(
 	visited *VisitedURLs,
 	cfg *config.Config,
 	seedHost string,
+	wg *sync.WaitGroup,
 ) {
 	for {
 		job, ok := jobs.Pop()
 		if !ok {
 			return
 		}
+		func() {
+			defer wg.Done()
 
-		if job.Depth > cfg.Depth {
-			continue
-		}
-
-		resp, err := fetchr.Fetch(job.URL)
-		if err != nil {
-			results <- result.PageResult{
-				Url:       job.URL,
-				Depth:     job.Depth,
-				TimeStamp: time.Now(),
-				Error:     err.Error(),
+			if job.Depth > cfg.Depth {
+				return
 			}
-			continue
-		}
 
-		links, err := parser.ExtractLinks(resp.Body, job.URL)
-		resp.Body.Close()
-		if err != nil {
+			resp, err := fetchr.Fetch(job.URL)
+			if err != nil {
+				results <- result.PageResult{
+					Url:       job.URL,
+					Depth:     job.Depth,
+					TimeStamp: time.Now(),
+					Error:     err.Error(),
+				}
+				return
+			}
+
+			links, err := parser.ExtractLinks(resp.Body, job.URL)
+			resp.Body.Close()
+			if err != nil {
+				results <- result.PageResult{
+					Url:       job.URL,
+					Status:    resp.StatusCode,
+					Depth:     job.Depth,
+					TimeStamp: time.Now(),
+					Error:     err.Error(),
+				}
+				return
+			}
+
+			for _, link := range links {
+				inscope, err := scope.InScope(seedHost, link, cfg.SubDomains, cfg.External)
+				if err != nil || !inscope {
+					continue
+				}
+				if visited.MarkIfNew(link) {
+					wg.Add(1)
+					jobs.Push(Job{URL: link, Depth: job.Depth + 1})
+				}
+			}
+
 			results <- result.PageResult{
 				Url:       job.URL,
 				Status:    resp.StatusCode,
 				Depth:     job.Depth,
 				TimeStamp: time.Now(),
-				Error:     err.Error(),
+				Error:     "",
 			}
-			continue
-		}
-
-		for _, link := range links {
-			inscope, err := scope.InScope(seedHost, link, cfg.SubDomains, cfg.External)
-			if err != nil || !inscope {
-				continue
-			}
-			if visited.MarkIfNew(link) {
-				jobs.Push(Job{URL: link, Depth: job.Depth + 1})
-			}
-		}
-
-		results <- result.PageResult{
-			Url:       job.URL,
-			Status:    resp.StatusCode,
-			Depth:     job.Depth,
-			TimeStamp: time.Now(),
-			Error:     "",
-		}
+		}()
 	}
 }
