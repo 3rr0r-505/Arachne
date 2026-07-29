@@ -1,1 +1,74 @@
 package crawler
+
+import (
+	"time"
+
+	"github.com/3rr0r-505/arachne/internal/config"
+	"github.com/3rr0r-505/arachne/internal/fetcher"
+	"github.com/3rr0r-505/arachne/internal/parser"
+	"github.com/3rr0r-505/arachne/internal/result"
+	"github.com/3rr0r-505/arachne/internal/scope"
+)
+
+func Worker(
+	id int,
+	jobs *JobQ,
+	results chan<- result.PageResult,
+	fetchr *fetcher.Fetcher,
+	visited *VisitedURLs,
+	cfg *config.Config,
+	seedHost string,
+) {
+	for {
+		job, ok := jobs.Pop()
+		if !ok {
+			return
+		}
+
+		if job.Depth > cfg.Depth {
+			continue
+		}
+
+		resp, err := fetchr.Fetch(job.URL)
+		if err != nil {
+			results <- result.PageResult{
+				Url:       job.URL,
+				Depth:     job.Depth,
+				TimeStamp: time.Now(),
+				Error:     err.Error(),
+			}
+			continue
+		}
+
+		links, err := parser.ExtractLinks(resp.Body, job.URL)
+		resp.Body.Close()
+		if err != nil {
+			results <- result.PageResult{
+				Url:       job.URL,
+				Status:    resp.StatusCode,
+				Depth:     job.Depth,
+				TimeStamp: time.Now(),
+				Error:     err.Error(),
+			}
+			continue
+		}
+
+		for _, link := range links {
+			inscope, err := scope.InScope(seedHost, link, cfg.SubDomains, cfg.External)
+			if err != nil || !inscope {
+				continue
+			}
+			if visited.MarkIfNew(link) {
+				jobs.Push(Job{URL: link, Depth: job.Depth + 1})
+			}
+		}
+
+		results <- result.PageResult{
+			Url:       job.URL,
+			Status:    resp.StatusCode,
+			Depth:     job.Depth,
+			TimeStamp: time.Now(),
+			Error:     "",
+		}
+	}
+}
