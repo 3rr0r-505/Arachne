@@ -23,3 +23,7 @@ func (jq *JobQ) Pop() (Job, bool) {
 	job, ok := <-jq.jobs
 	return job, ok
 }
+
+func (jq *JobQ) Close() {
+	close(jq.jobs)
+}

@@ -26,6 +26,10 @@ func Validate(cfg *config.Config) error {
 		invalid = append(invalid, "max-pages must be >= 0")
 	}
 
+	if cfg.QueueSize <= 0 {
+		invalid = append(invalid, "queue-size must be > 0")
+	}
+
 	if cfg.Timeout <= 0 {
 		invalid = append(invalid, "timeout must be > 0")
 	}

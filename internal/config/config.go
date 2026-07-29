@@ -13,6 +13,7 @@ type Config struct {
 	Workers               int
 	Timeout               time.Duration
 	MaxPages              int
+	QueueSize             int
 	SubDomains            bool
 	External              bool
 	Rate                  float64
@@ -33,6 +34,7 @@ func ParseFlags(args []string) (*Config, error) {
 	maxPages := fs.Int("max-pages", 0, "hard cap on total pages crawled (0 = unlimited)")
 	subDomains := fs.Bool("subs", false, "include subdomains as in-scope")
 	external := fs.Bool("external", false, "follow external links too")
+	queueSize := fs.Int("queue-size", 100, "buffer size for job queue")
 
 	rate := fs.Float64("rate", 0, "requests/sec per domain")
 	retries := fs.Int("retries", 2, "max retry attempts on failed fetch")
@@ -59,6 +61,7 @@ func ParseFlags(args []string) (*Config, error) {
 		Workers:    *workers,
 		Timeout:    *timeout,
 		MaxPages:   *maxPages,
+		QueueSize:  *queueSize,
 		SubDomains: *subDomains,
 		External:   *external,
 		Rate:       *rate,
