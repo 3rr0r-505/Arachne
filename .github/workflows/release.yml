@@ -1,0 +1,47 @@
+# .github/workflows/release.yml
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Build binaries
+        run: |
+          mkdir -p dist
+          declare -A targets=(
+            ["linux-amd64"]="linux amd64"
+            ["linux-arm64"]="linux arm64"
+            ["darwin-amd64"]="darwin amd64"
+            ["darwin-arm64"]="darwin arm64"
+            ["windows-amd64"]="windows amd64"
+          )
+          for name in "${!targets[@]}"; do
+            read -r os arch <<< "${targets[$name]}"
+            ext=""
+            [ "$os" = "windows" ] && ext=".exe"
+            GOOS=$os GOARCH=$arch go build -o dist/arachne-$name$ext ./cmd/arachne
+          done
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          make_latest: ${{ !contains(github.ref_name, '-') }}
