@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -12,13 +13,21 @@ type Fetcher struct {
 	retries int
 }
 
-func NewFetcher(timeout time.Duration, retries int) *Fetcher {
-	return &Fetcher{
-		client: &http.Client{
-			Timeout: timeout,
-		},
-		retries: retries,
+func NewFetcher(timeout time.Duration, retries int, proxy string) (*Fetcher, error) {
+	client := &http.Client{Timeout: timeout}
+
+	if proxy != "" {
+		proxyURL, err := url.Parse(proxy)
+		if err != nil {
+			return nil, fmt.Errorf("invalid proxy URL %q: %w", proxy, err)
+		}
+
+		client.Transport = &http.Transport{
+			Proxy: http.ProxyURL(proxyURL),
+		}
 	}
+
+	return &Fetcher{client: client, retries: retries}, nil
 }
 
 func (f *Fetcher) Fetch(ctx context.Context, url string) (*http.Response, error) {

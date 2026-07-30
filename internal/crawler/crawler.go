@@ -22,7 +22,10 @@ func Crawl(ctx context.Context, cfg *config.Config) (<-chan result.PageResult, e
 
 	jobs := NewJobQueue()
 	visited := NewVisitedURLs()
-	fetchr := fetcher.NewFetcher(cfg.Timeout, cfg.Retries)
+	fetchr, err := fetcher.NewFetcher(cfg.Timeout, cfg.Retries, cfg.Proxy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create fetcher: %w", err)
+	}
 	results := make(chan result.PageResult, cfg.Workers)
 	limiter := ratelimit.NewDomainLimiter(cfg.Rate)
 
