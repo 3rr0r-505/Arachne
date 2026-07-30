@@ -8,12 +8,28 @@ import (
 	"golang.org/x/net/html"
 )
 
-func ExtractLinks(body io.Reader, baseURL string) ([]string, error) {
-	var urls []string
+type Form struct {
+	Action string
+	Method string
+}
+
+type ExtractOptions struct {
+	IncludeJS    bool
+	IncludeForms bool
+}
+
+type ExtractResult struct {
+	Links   []string
+	JSLinks []string
+	Forms   []Form
+}
+
+func Extract(body io.Reader, baseURL string, opts ExtractOptions) (ExtractResult, error) {
+	var result ExtractResult
 
 	base, err := url.Parse(baseURL)
 	if err != nil {
-		return nil, fmt.Errorf("invalid base URL %q: %w", baseURL, err)
+		return result, fmt.Errorf("invalid base URL %q: %w", baseURL, err)
 	}
 
 	z := html.NewTokenizer(body)
@@ -22,14 +38,15 @@ func ExtractLinks(body io.Reader, baseURL string) ([]string, error) {
 
 		if tt == html.ErrorToken {
 			if z.Err() != io.EOF {
-				return nil, fmt.Errorf("html parse error: %w", z.Err())
+				return result, fmt.Errorf("html parse error: %w", z.Err())
 			}
 			break
 		}
 
 		if tt == html.StartTagToken || tt == html.SelfClosingTagToken {
 			token := z.Token()
-			if token.Data == "a" {
+			switch token.Data {
+			case "a":
 				for _, attr := range token.Attr {
 					if attr.Key == "href" {
 						ref, err := url.Parse(attr.Val)
@@ -38,12 +55,48 @@ func ExtractLinks(body io.Reader, baseURL string) ([]string, error) {
 						}
 						resolved := base.ResolveReference(ref)
 						resolved.Fragment = ""
-						urls = append(urls, resolved.String())
+						result.Links = append(result.Links, resolved.String())
 					}
 				}
+
+			case "script":
+				if !opts.IncludeJS {
+					continue
+				}
+				for _, attr := range token.Attr {
+					if attr.Key == "src" {
+						ref, err := url.Parse(attr.Val)
+						if err != nil {
+							continue
+						}
+						resolved := base.ResolveReference(ref)
+						resolved.Fragment = ""
+						result.JSLinks = append(result.JSLinks, resolved.String())
+					}
+				}
+
+			case "form":
+				if !opts.IncludeForms {
+					continue
+				}
+				var form Form
+				for _, attr := range token.Attr {
+					switch attr.Key {
+					case "action":
+						ref, err := url.Parse(attr.Val)
+						if err == nil {
+							resolved := base.ResolveReference(ref)
+							resolved.Fragment = ""
+							form.Action = resolved.String()
+						}
+					case "method":
+						form.Method = attr.Val
+					}
+				}
+				result.Forms = append(result.Forms, form)
 			}
 		}
 	}
 
-	return urls, nil
+	return result, nil
 }

@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestExtractLinks(t *testing.T) {
+func TestExtractor(t *testing.T) {
 	tests := []struct {
 		name    string
 		html    string
@@ -46,17 +46,17 @@ func TestExtractLinks(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ExtractLinks(strings.NewReader(tt.html), tt.baseURL)
+			got, err := Extract(strings.NewReader(tt.html), tt.baseURL, ExtractOptions{})
 			if err != nil {
-				t.Fatalf("ExtractLinks() error = %v", err)
+				t.Fatalf("Extract() error = %v", err)
 			}
 
-			if len(got) != len(tt.want) {
-				t.Fatalf("ExtractLinks() = %v, want %v", got, tt.want)
+			if len(got.Links) != len(tt.want) {
+				t.Fatalf("Extract().Links = %v, want %v", got.Links, tt.want)
 			}
-			for i := range got {
-				if got[i] != tt.want[i] {
-					t.Errorf("ExtractLinks()[%d] = %v, want %v", i, got[i], tt.want[i])
+			for i := range got.Links {
+				if got.Links[i] != tt.want[i] {
+					t.Errorf("Extract().Links[%d] = %v, want %v", i, got.Links[i], tt.want[i])
 				}
 			}
 		})
