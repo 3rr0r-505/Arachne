@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"sync"
+	"sync/atomic"
 
 	"github.com/3rr0r-505/arachne/internal/config"
 	"github.com/3rr0r-505/arachne/internal/fetcher"
@@ -26,6 +27,7 @@ func Crawl(ctx context.Context, cfg *config.Config) (<-chan result.PageResult, e
 	limiter := ratelimit.NewDomainLimiter(cfg.Rate)
 
 	var wg sync.WaitGroup
+	var pageCount atomic.Int64
 
 	var cancelCTX context.CancelFunc
 	if cfg.CtxTimer > 0 {
@@ -36,7 +38,7 @@ func Crawl(ctx context.Context, cfg *config.Config) (<-chan result.PageResult, e
 	jobs.Push(Job{URL: cfg.Url, Depth: 0})
 
 	for id := range cfg.Workers {
-		go Worker(id, jobs, results, fetchr, visited, cfg, seedHost, &wg, ctx, limiter)
+		go Worker(id, jobs, results, fetchr, visited, cfg, seedHost, &wg, ctx, limiter, &pageCount)
 	}
 
 	go func() {

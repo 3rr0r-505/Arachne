@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/url"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/3rr0r-505/arachne/internal/config"
@@ -25,6 +26,7 @@ func Worker(
 	wg *sync.WaitGroup,
 	ctx context.Context,
 	limiter *ratelimit.DomainLimiter,
+	pageCount *atomic.Int64,
 ) {
 	for {
 		job, ok := jobs.Pop()
@@ -43,6 +45,11 @@ func Worker(
 			if cfg.Depth != -1 && job.Depth > cfg.Depth {
 				return
 			}
+
+			if cfg.MaxPages > 0 && pageCount.Load() >= int64(cfg.MaxPages) {
+				return
+			}
+			defer pageCount.Add(1)
 
 			u, err := url.Parse(job.URL)
 			if err == nil {
