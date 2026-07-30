@@ -40,13 +40,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	for res := range results {
-		if res.Error != "" {
-			// fmt.Printf("[ERR] %s (depth %d): %s\n", res.Url, res.Depth, res.Error)
-			fmt.Printf("%s [ERR] %s (depth %d): %s\n", Warning, res.Url, res.Depth, res.Error)
+	for r := range results {
+		if r.Error != "" {
+			fmt.Printf("%s [ERR] %s (depth %d): %s\n", Warning, r.Url, r.Depth, r.Error)
 			continue
 		}
-		// fmt.Printf("[%d] %s (depth %d)\n", res.Status, res.Url, res.Depth)
-		fmt.Printf("%s [%d] %s (depth %d)\n", URL, res.Status, res.Url, res.Depth)
+		fmt.Printf("%s [%d] %s (depth %d)\n", URL, r.Status, r.Url, r.Depth)
+		for _, js := range r.JSLinks {
+			fmt.Printf("    js: %s\n", js)
+		}
+		for _, f := range r.Forms {
+			fmt.Printf("    form: action=%s method=%s\n", f.Action, f.Method)
+		}
 	}
 }
