@@ -17,7 +17,7 @@ func Crawl(cfg *config.Config) (<-chan result.PageResult, error) {
 	}
 	seedHost := seed.Hostname()
 
-	jobs := NewJobQueue(cfg.QueueSize)
+	jobs := NewJobQueue()
 	visited := NewVisitedURLs()
 	fetchr := fetcher.NewFetcher(cfg.Timeout)
 	results := make(chan result.PageResult, cfg.Workers)

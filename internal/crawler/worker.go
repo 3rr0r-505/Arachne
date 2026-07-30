@@ -29,7 +29,7 @@ func Worker(
 		func() {
 			defer wg.Done()
 
-			if job.Depth > cfg.Depth {
+			if cfg.Depth != -1 && job.Depth > cfg.Depth {
 				return
 			}
 

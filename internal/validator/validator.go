@@ -14,8 +14,8 @@ func Validate(cfg *config.Config) error {
 		invalid = append(invalid, "url is required")
 	}
 
-	if cfg.Depth < 0 {
-		invalid = append(invalid, "depth must be >= 0")
+	if cfg.Depth < -1 {
+		invalid = append(invalid, "depth must be >= -1 (-1 = unlimited)")
 	}
 
 	if cfg.Workers <= 0 {
@@ -24,10 +24,6 @@ func Validate(cfg *config.Config) error {
 
 	if cfg.MaxPages < 0 {
 		invalid = append(invalid, "max-pages must be >= 0")
-	}
-
-	if cfg.QueueSize <= 0 {
-		invalid = append(invalid, "queue-size must be > 0")
 	}
 
 	if cfg.Timeout <= 0 {
