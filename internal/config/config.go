@@ -18,7 +18,7 @@ type Config struct {
 	Rate                  float64
 	Retries               int
 	CtxTimer              time.Duration
-	Robots, Forms, JS     bool
+	Forms, JS             bool
 	Format, Output, Proxy string
 }
 
@@ -38,7 +38,6 @@ func ParseFlags(args []string) (*Config, error) {
 	retries := fs.Int("retries", 2, "max retry attempts on failed fetch")
 	ctxTimer := fs.Duration("ctx-timeout", 0, "overall crawl timeout")
 
-	robots := fs.Bool("robots", true, "respect robots.txt")
 	forms := fs.Bool("forms", false, "extract forms found on pages")
 	js := fs.Bool("js", false, "extract JS file links")
 
@@ -64,7 +63,6 @@ func ParseFlags(args []string) (*Config, error) {
 		Rate:       *rate,
 		Retries:    *retries,
 		CtxTimer:   *ctxTimer,
-		Robots:     *robots,
 		Forms:      *forms,
 		JS:         *js,
 		Format:     *format,
