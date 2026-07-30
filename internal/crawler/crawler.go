@@ -21,7 +21,7 @@ func Crawl(ctx context.Context, cfg *config.Config) (<-chan result.PageResult, e
 
 	jobs := NewJobQueue()
 	visited := NewVisitedURLs()
-	fetchr := fetcher.NewFetcher(cfg.Timeout)
+	fetchr := fetcher.NewFetcher(cfg.Timeout, cfg.Retries)
 	results := make(chan result.PageResult, cfg.Workers)
 	limiter := ratelimit.NewDomainLimiter(cfg.Rate)
 
