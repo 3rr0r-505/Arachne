@@ -10,7 +10,7 @@
 ![Interface](https://img.shields.io/badge/UI-Terminal-darkgreen?logo=gnubash)
 ![License](https://img.shields.io/badge/License-Apache%202.0-73e4bf?logo=opensourceinitiative&logoColor=73e4bf)
 
-A concurrent web crawler built to solidify goroutines, channels, worker pools, and context-based cancellation — with a lightweight recon angle for HTB/offsec use.
+A concurrent web crawler built to solidify goroutines, channels, worker pools, and context-based cancellation — with a lightweight recon angle for OffSec use.
 
 </div>
 
