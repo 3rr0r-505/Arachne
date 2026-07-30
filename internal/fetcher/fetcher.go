@@ -1,6 +1,7 @@
 package fetcher
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -18,8 +19,8 @@ func NewFetcher(timeout time.Duration) *Fetcher {
 	}
 }
 
-func (f *Fetcher) Fetch(url string) (*http.Response, error) {
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+func (f *Fetcher) Fetch(ctx context.Context, url string) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build request for %q: %w", url, err)
 	}

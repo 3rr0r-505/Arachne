@@ -1,6 +1,7 @@
 package crawler
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -20,6 +21,7 @@ func Worker(
 	cfg *config.Config,
 	seedHost string,
 	wg *sync.WaitGroup,
+	ctx context.Context,
 ) {
 	for {
 		job, ok := jobs.Pop()
@@ -29,11 +31,17 @@ func Worker(
 		func() {
 			defer wg.Done()
 
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
 			if cfg.Depth != -1 && job.Depth > cfg.Depth {
 				return
 			}
 
-			resp, err := fetchr.Fetch(job.URL)
+			resp, err := fetchr.Fetch(ctx, job.URL)
 			if err != nil {
 				results <- result.PageResult{
 					Url:       job.URL,
