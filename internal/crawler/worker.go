@@ -2,12 +2,14 @@ package crawler
 
 import (
 	"context"
+	"net/url"
 	"sync"
 	"time"
 
 	"github.com/3rr0r-505/arachne/internal/config"
 	"github.com/3rr0r-505/arachne/internal/fetcher"
 	"github.com/3rr0r-505/arachne/internal/parser"
+	"github.com/3rr0r-505/arachne/internal/ratelimit"
 	"github.com/3rr0r-505/arachne/internal/result"
 	"github.com/3rr0r-505/arachne/internal/scope"
 )
@@ -22,6 +24,7 @@ func Worker(
 	seedHost string,
 	wg *sync.WaitGroup,
 	ctx context.Context,
+	limiter *ratelimit.DomainLimiter,
 ) {
 	for {
 		job, ok := jobs.Pop()
@@ -39,6 +42,19 @@ func Worker(
 
 			if cfg.Depth != -1 && job.Depth > cfg.Depth {
 				return
+			}
+
+			u, err := url.Parse(job.URL)
+			if err == nil {
+				if err := limiter.Wait(ctx, u.Hostname()); err != nil {
+					results <- result.PageResult{
+						Url:       job.URL,
+						Depth:     job.Depth,
+						TimeStamp: time.Now(),
+						Error:     err.Error(),
+					}
+					return
+				}
 			}
 
 			resp, err := fetchr.Fetch(ctx, job.URL)

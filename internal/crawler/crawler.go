@@ -8,6 +8,7 @@ import (
 
 	"github.com/3rr0r-505/arachne/internal/config"
 	"github.com/3rr0r-505/arachne/internal/fetcher"
+	"github.com/3rr0r-505/arachne/internal/ratelimit"
 	"github.com/3rr0r-505/arachne/internal/result"
 )
 
@@ -22,6 +23,7 @@ func Crawl(ctx context.Context, cfg *config.Config) (<-chan result.PageResult, e
 	visited := NewVisitedURLs()
 	fetchr := fetcher.NewFetcher(cfg.Timeout)
 	results := make(chan result.PageResult, cfg.Workers)
+	limiter := ratelimit.NewDomainLimiter(cfg.Rate)
 
 	var wg sync.WaitGroup
 
@@ -34,7 +36,7 @@ func Crawl(ctx context.Context, cfg *config.Config) (<-chan result.PageResult, e
 	jobs.Push(Job{URL: cfg.Url, Depth: 0})
 
 	for id := range cfg.Workers {
-		go Worker(id, jobs, results, fetchr, visited, cfg, seedHost, &wg, ctx)
+		go Worker(id, jobs, results, fetchr, visited, cfg, seedHost, &wg, ctx, limiter)
 	}
 
 	go func() {
