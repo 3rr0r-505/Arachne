@@ -21,7 +21,13 @@ const Warning = "\u26A0\uFE0F"
 const URL = "\U0001F517\uFE0F"
 const Saved = "\U0001F4C2\uFE0F"
 
+type ScanOutput struct {
+	Command string              `json:"command"`
+	Results []result.PageResult `json:"results"`
+}
+
 func main() {
+	command := strings.Join(os.Args, " ")
 	cfg, err := config.ParseFlags(os.Args[1:])
 	if err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -73,11 +79,17 @@ func main() {
 			}
 		}
 
-		data, err := json.MarshalIndent(collected, "", "  ")
+		output := ScanOutput{
+			Command: command,
+			Results: collected,
+		}
+
+		data, err := json.MarshalIndent(output, "", "  ")
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
+		data = append(data, '\n')
 
 		if err := os.WriteFile(finalPath, data, 0644); err != nil {
 			fmt.Fprintln(os.Stderr, err)
