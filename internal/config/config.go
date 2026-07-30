@@ -8,18 +8,18 @@ import (
 )
 
 type Config struct {
-	Url                   string
-	Depth                 int
-	Workers               int
-	Timeout               time.Duration
-	MaxPages              int
-	SubDomains            bool
-	External              bool
-	Rate                  float64
-	Retries               int
-	CtxTimer              time.Duration
-	Forms, JS             bool
-	Format, Output, Proxy string
+	Url           string
+	Depth         int
+	Workers       int
+	Timeout       time.Duration
+	MaxPages      int
+	SubDomains    bool
+	External      bool
+	Rate          float64
+	Retries       int
+	CtxTimer      time.Duration
+	Forms, JS     bool
+	Output, Proxy string
 }
 
 func ParseFlags(args []string) (*Config, error) {
@@ -41,7 +41,6 @@ func ParseFlags(args []string) (*Config, error) {
 	forms := fs.Bool("forms", false, "extract forms found on pages")
 	js := fs.Bool("js", false, "extract JS file links")
 
-	format := fs.String("format", "text", "output format: text | json | csv")
 	output := fs.String("out", "", "output file path (default stdout)")
 	proxy := fs.String("proxy", "", "proxy URL to route requests through")
 
@@ -65,7 +64,6 @@ func ParseFlags(args []string) (*Config, error) {
 		CtxTimer:   *ctxTimer,
 		Forms:      *forms,
 		JS:         *js,
-		Format:     *format,
 		Output:     *output,
 		Proxy:      *proxy,
 	}, nil
