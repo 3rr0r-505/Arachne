@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 
 	"github.com/3rr0r-505/arachne/internal/config"
 	"github.com/3rr0r-505/arachne/internal/crawler"
@@ -29,7 +31,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	results, err := crawler.Crawl(cfg)
+	ctx, cancelCTX := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancelCTX()
+
+	results, err := crawler.Crawl(ctx, cfg)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
