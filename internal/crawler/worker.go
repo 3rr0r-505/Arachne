@@ -75,7 +75,10 @@ func Worker(
 				return
 			}
 
-			links, err := parser.ExtractLinks(resp.Body, job.URL)
+			extracted, err := parser.Extract(resp.Body, job.URL, parser.ExtractOptions{
+				IncludeJS:    cfg.JS,
+				IncludeForms: cfg.Forms,
+			})
 			resp.Body.Close()
 			if err != nil {
 				results <- result.PageResult{
@@ -88,7 +91,7 @@ func Worker(
 				return
 			}
 
-			for _, link := range links {
+			for _, link := range extracted.Links {
 				inscope, err := scope.InScope(seedHost, link, cfg.SubDomains, cfg.External)
 				if err != nil || !inscope {
 					continue
@@ -105,6 +108,8 @@ func Worker(
 				Depth:     job.Depth,
 				TimeStamp: time.Now(),
 				Error:     "",
+				JSLinks:   extracted.JSLinks,
+				Forms:     extracted.Forms,
 			}
 		}()
 	}
